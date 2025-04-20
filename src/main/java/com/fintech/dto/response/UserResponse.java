@@ -2,6 +2,7 @@ package com.fintech.dto.response;
 
 import lombok.Data;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -11,7 +12,7 @@ public class UserResponse {
     private String email;
     private String phoneNumber;
     private KYCResponse kyc;
-    private Set<AccountResponse> accounts;
-    private Set<String> roles;
-    private Set<OfferResponse> offers;
+    private Set<AccountResponse> accounts = new HashSet<>();
+    private Set<String> roles = new HashSet<>();
+    private Set<OfferResponse> offers = new HashSet<>();
 }

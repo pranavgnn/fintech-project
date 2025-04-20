@@ -32,6 +32,16 @@ public class DataInitializer implements CommandLineRunner {
                     return roleRepository.save(role);
                 });
 
+        // Create user role if it doesn't exist
+        Role userRole = roleRepository.findByName(RoleType.ROLE_USER)
+                .orElseGet(() -> {
+                    Role role = new Role();
+                    role.setName(RoleType.ROLE_USER);
+                    return roleRepository.save(role);
+                });
+
+        log.info("Roles initialized: ROLE_ADMIN and ROLE_USER are now available");
+
         // Check if any user with admin role exists
         List<User> allUsers = userRepository.findAll();
         boolean adminExists = allUsers.stream()
@@ -49,6 +59,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setPhoneNumber(adminPhoneNumber);
             admin.getRoles().add(adminRole);
+            admin.getRoles().add(userRole); // Admin also has user role
 
             try {
                 userRepository.save(admin);

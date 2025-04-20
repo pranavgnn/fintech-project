@@ -21,16 +21,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public JwtAuthResponse login(LoginRequest request) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()));
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String jwt = tokenProvider.generateToken(authentication);
-            return new JwtAuthResponse(jwt, "Bearer");
-        } catch (Exception e) {
-            throw new UnauthorizedException("Invalid email or password");
-        }
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        String jwt = tokenProvider.generateToken(authentication);
+        return new JwtAuthResponse(jwt, "Bearer");
     }
 
     @Override

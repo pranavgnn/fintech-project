@@ -1,88 +1,133 @@
-import { BrowserRouter, Routes, Route } from "react-router";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
 import { Toaster } from "sonner";
-import { AuthProvider } from "./lib/auth";
-import { Layout } from "./components/Layout";
-import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 
-// Pages
-import { Landing } from "./pages/Landing";
-import { Login } from "./pages/Login";
-import { Signup } from "./pages/Signup";
-import { Dashboard } from "./pages/Dashboard";
-import { Accounts } from "./pages/Accounts";
-import { AccountDetails } from "./pages/AccountDetails";
-import { Admin } from "./pages/Admin";
-import { Profile } from "./pages/Profile";
-import { NotFound } from "./pages/NotFound";
+// User pages
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import DashboardPage from "./pages/DashboardPage";
+import AccountDetailPage from "./pages/AccountDetailPage";
+import CreateAccountPage from "./pages/CreateAccountPage";
+import TransferPage from "./pages/TransferPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import LandingPage from "./pages/LandingPage";
 
-export default function App() {
+// Admin pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminOffersPage from "./pages/admin/AdminOffersPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminAccountsPage from "./pages/admin/AdminAccountsPage";
+import AdminTransactionsPage from "./pages/admin/AdminTransactionsPage";
+
+// Components
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+import { ThemeProvider } from "./components/theme-provider";
+
+function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Toaster position="top-right" />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <Router>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected user routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/accounts"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Accounts />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/accounts/create"
+              element={
+                <ProtectedRoute>
+                  <CreateAccountPage />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/accounts/:accountId"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <AccountDetails />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/accounts/:accountId"
+              element={
+                <ProtectedRoute>
+                  <AccountDetailPage />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requireAdmin>
-                <Layout>
-                  <Admin />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/transfer"
+              element={
+                <ProtectedRoute>
+                  <TransferPage />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Profile />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Admin routes */}
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+            <Route
+              path="/admin/offers"
+              element={
+                <AdminRoute>
+                  <AdminOffersPage />
+                </AdminRoute>
+              }
+            />
+
+            <Route
+              path="/admin/users"
+              element={
+                <AdminRoute>
+                  <AdminUsersPage />
+                </AdminRoute>
+              }
+            />
+
+            <Route
+              path="/admin/accounts"
+              element={
+                <AdminRoute>
+                  <AdminAccountsPage />
+                </AdminRoute>
+              }
+            />
+
+            <Route
+              path="/admin/transactions"
+              element={
+                <AdminRoute>
+                  <AdminTransactionsPage />
+                </AdminRoute>
+              }
+            />
+
+            <Route path="/" element={<Navigate to="/login" replace />} />
+
+            {/* 404 Page */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+          <Toaster position="top-right" />
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
+
+export default App;

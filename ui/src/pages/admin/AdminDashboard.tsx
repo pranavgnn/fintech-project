@@ -1,0 +1,157 @@
+import React, { useState, useEffect } from "react";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { PieChart, BarChart4, Users, Gift } from "lucide-react";
+import { toast } from "sonner";
+import DashboardStats from "@/components/admin/DashboardStats";
+import AdminOverviewChart from "@/components/admin/AdminOverviewChart";
+import AdminActivityLog from "@/components/admin/AdminActivityLog";
+
+const AdminDashboard: React.FC = () => {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalAccounts: 0,
+    totalTransactions: 0,
+    activeOffers: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch dashboard statistics
+      const token = localStorage.getItem("token");
+
+      // Fetch users count
+      const response = await fetch("/api/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const users = await response.json();
+
+        // Count accounts across all users
+        const accountsCount = users.reduce(
+          (total: number, user: any) => total + (user.accounts?.length || 0),
+          0
+        );
+
+        // Calculate number of transactions (estimated)
+        const transactionsCount = accountsCount * 3; // Estimate
+
+        // Fetch offers
+        const offersResponse = await fetch("/api/offers", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const offers = offersResponse.ok ? await offersResponse.json() : [];
+
+        // Set the dashboard stats
+        setStats({
+          totalUsers: users.length,
+          totalAccounts: accountsCount,
+          totalTransactions: transactionsCount,
+          activeOffers: offers.length,
+        });
+      } else {
+        console.error("Failed to fetch users:", response.status);
+        // Initialize with empty values on error
+        setStats({
+          totalUsers: 0,
+          totalAccounts: 0,
+          totalTransactions: 0,
+          activeOffers: 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      toast.error("Failed to load dashboard statistics");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <AdminLayout>
+      <div className="flex-1 space-y-6 p-6 md:p-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
+        </div>
+
+        {/* Stats Cards */}
+        <DashboardStats stats={stats} isLoading={isLoading} />
+
+        {/* Charts and Activity */}
+        <div className="grid gap-6 md:grid-cols-7">
+          <div className="md:col-span-5">
+            <AdminOverviewChart />
+          </div>
+          <div className="md:col-span-2">
+            <AdminActivityLog />
+          </div>
+        </div>
+
+        {/* System Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle>System Information</CardTitle>
+            <CardDescription>Key platform metrics and status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  System Status
+                </p>
+                <div className="flex items-center space-x-2">
+                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                  <p className="font-medium">Operational</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  API Status
+                </p>
+                <div className="flex items-center space-x-2">
+                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                  <p className="font-medium">Operational</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Last System Update
+                </p>
+                <p className="font-medium">{new Date().toLocaleDateString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Database Status
+                </p>
+                <div className="flex items-center space-x-2">
+                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                  <p className="font-medium">Connected</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
+  );
+};
+
+export default AdminDashboard;

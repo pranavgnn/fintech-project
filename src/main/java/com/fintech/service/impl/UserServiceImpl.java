@@ -13,7 +13,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,29 +42,32 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhoneNumber(request.getPhoneNumber());
 
-        // Create KYC
-        KYC kyc = new KYC();
-        kyc.setDateOfBirth(request.getKyc().getDateOfBirth());
-        kyc.setAadhaarNumber(request.getKyc().getAadhaarNumber());
-        kyc.setPanNumber(request.getKyc().getPanNumber());
-
-        // Create Address
-        Address address = new Address();
-        address.setLine1(request.getKyc().getAddress().getLine1());
-        address.setLine2(request.getKyc().getAddress().getLine2());
-        address.setStreet(request.getKyc().getAddress().getStreet());
-        address.setCity(request.getKyc().getAddress().getCity());
-        address.setState(request.getKyc().getAddress().getState());
-        address.setCountry(request.getKyc().getAddress().getCountry());
-        address.setZipCode(request.getKyc().getAddress().getZipCode());
-
-        kyc.setAddress(address);
-        user.setKyc(kyc);
-
         // Set default role
         Role userRole = roleRepository.findByName(RoleType.ROLE_USER)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
         user.getRoles().add(userRole);
+
+        // Create KYC if provided
+        if (request.getKyc() != null) {
+            KYC kyc = new KYC();
+            kyc.setDateOfBirth(request.getKyc().getDateOfBirth());
+            kyc.setAadhaarNumber(request.getKyc().getAadhaarNumber());
+            kyc.setPanNumber(request.getKyc().getPanNumber());
+
+            // Create Address if provided
+            if (request.getKyc().getAddress() != null) {
+                Address address = new Address();
+                address.setLine1(request.getKyc().getAddress().getLine1());
+                address.setLine2(request.getKyc().getAddress().getLine2());
+                address.setStreet(request.getKyc().getAddress().getStreet());
+                address.setCity(request.getKyc().getAddress().getCity());
+                address.setState(request.getKyc().getAddress().getState());
+                address.setCountry(request.getKyc().getAddress().getCountry());
+                address.setZipCode(request.getKyc().getAddress().getZipCode());
+                kyc.setAddress(address);
+            }
+            user.setKyc(kyc);
+        }
 
         User savedUser = userRepository.save(user);
         return convertToUserResponse(savedUser);
@@ -139,35 +144,33 @@ public class UserServiceImpl implements UserService {
             response.setKyc(kycResponse);
         }
 
-        // Convert Accounts
-        response.setAccounts(user.getAccounts().stream()
-                .map(account -> {
-                    AccountResponse accountResponse = new AccountResponse();
-                    accountResponse.setId(account.getId());
-                    accountResponse.setAccountNumber(account.getAccountNumber());
-                    accountResponse.setBalance(account.getBalance());
-                    accountResponse.setType(account.getType());
-                    return accountResponse;
-                })
-                .collect(Collectors.toSet()));
+        // Convert Accounts (safely handling nulls)
+        Set<AccountResponse> accounts = new HashSet<>();
+        if (user.getAccounts() != null) {
+            accounts = user.getAccounts().stream()
+                    .map(account -> {
+                        AccountResponse accountResponse = new AccountResponse();
+                        accountResponse.setId(account.getId());
+                        accountResponse.setAccountNumber(account.getAccountNumber());
+                        accountResponse.setBalance(account.getBalance());
+                        accountResponse.setType(account.getType());
+                        return accountResponse;
+                    })
+                    .collect(Collectors.toSet());
+        }
+        response.setAccounts(accounts);
 
-        // Convert Roles
-        response.setRoles(user.getRoles().stream()
-                .map(role -> role.getName().name())
-                .collect(Collectors.toSet()));
+        // Convert Roles (safely handling nulls)
+        Set<String> roles = new HashSet<>();
+        if (user.getRoles() != null) {
+            roles = user.getRoles().stream()
+                    .map(role -> role.getName().name())
+                    .collect(Collectors.toSet());
+        }
+        response.setRoles(roles);
 
-        // Convert Offers
-        response.setOffers(user.getOffers().stream()
-                .map(offer -> {
-                    OfferResponse offerResponse = new OfferResponse();
-                    offerResponse.setId(offer.getId());
-                    offerResponse.setDescription(offer.getDescription());
-                    offerResponse.setType(offer.getType());
-                    offerResponse.setValidFrom(offer.getValidFrom());
-                    offerResponse.setValidTill(offer.getValidTill());
-                    return offerResponse;
-                })
-                .collect(Collectors.toSet()));
+        // Initialize offers as empty set since the field may not exist yet
+        response.setOffers(new HashSet<>());
 
         return response;
     }

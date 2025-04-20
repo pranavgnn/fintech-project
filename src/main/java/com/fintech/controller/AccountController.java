@@ -22,6 +22,7 @@ public class AccountController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<List<AccountResponse>> getUserAccounts(@PathVariable Long userId) {
+        System.out.println("Fetching accounts for user ID: " + userId);
         return ResponseEntity.ok(accountService.getUserAccounts(userId));
     }
 

@@ -9,6 +9,6 @@ import java.math.BigDecimal;
 public class AccountResponse {
     private Long id;
     private String accountNumber;
-    private BigDecimal balance;
     private AccountType type;
+    private BigDecimal balance;
 }
