@@ -1,7 +1,16 @@
 import React, { useState } from "react";
 import { Toaster } from "sonner";
-import Sidebar from "../dashboard/Sidebar";
+import Sidebar from "../shared/Sidebar";
 import RootLayout from "./RootLayout";
+import {
+  BarChart,
+  CreditCard,
+  PlusCircle,
+  Users,
+  Home,
+  ArrowRightLeft,
+} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,34 +21,53 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
   showFooter = false,
 }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user } = useAuth();
+
+  const isAdmin = user?.roles?.some((role: string) => role === "ROLE_ADMIN");
+
+  const navItems = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: Home,
+    },
+    {
+      title: "Analytics",
+      href: "/analytics",
+      icon: BarChart,
+    },
+    {
+      title: "Accounts",
+      href: "/accounts",
+      icon: CreditCard,
+    },
+    {
+      title: "Transfer",
+      href: "/transfer",
+      icon: ArrowRightLeft,
+    },
+    {
+      title: "Create Account",
+      href: "/accounts/create",
+      icon: PlusCircle,
+    },
+  ];
+
+  if (isAdmin) {
+    navItems.push({
+      title: "Admin",
+      href: "/admin",
+      icon: Users,
+    });
+  }
 
   return (
     <RootLayout showFooter={showFooter}>
-      <div className="flex h-screen overflow-hidden bg-background">
-        {/* Sidebar for larger screens */}
-        <div className="hidden md:flex">
-          <Sidebar />
+      <div className="flex min-h-[calc(100vh-64px)]">
+        <Sidebar items={navItems} />
+        <div className="pl-64 w-full">
+          <main className="p-6">{children}</main>
         </div>
-
-        {/* Mobile sidebar */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-40 md:hidden">
-            <div
-              className="fixed inset-0 bg-black/50"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="fixed inset-y-0 left-0 w-64 bg-background">
-              <Sidebar mobile onClose={() => setSidebarOpen(false)} />
-            </div>
-          </div>
-        )}
-
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <main className="flex-1 overflow-auto">{children}</main>
-        </div>
-
-        <Toaster position="top-right" />
       </div>
     </RootLayout>
   );

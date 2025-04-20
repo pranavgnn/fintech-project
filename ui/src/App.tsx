@@ -11,6 +11,9 @@ import CreateAccountPage from "./pages/CreateAccountPage";
 import TransferPage from "./pages/TransferPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LandingPage from "./pages/LandingPage";
+import UserDetailsPage from "@/pages/UserDetailsPage";
+import UserAnalyticsPage from "@/pages/UserAnalyticsPage";
+import AccountsPage from "@/pages/AccountsPage";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -18,6 +21,7 @@ import AdminOffersPage from "./pages/admin/AdminOffersPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminAccountsPage from "./pages/admin/AdminAccountsPage";
 import AdminTransactionsPage from "./pages/admin/AdminTransactionsPage";
+import OfferFormPage from "@/pages/admin/OfferFormPage";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -72,6 +76,33 @@ function App() {
               }
             />
 
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <UserDetailsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <UserAnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/accounts"
+              element={
+                <ProtectedRoute>
+                  <AccountsPage />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Admin routes */}
             <Route
               path="/admin"
@@ -114,6 +145,33 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminTransactionsPage />
+                </AdminRoute>
+              }
+            />
+
+            <Route
+              path="/admin/users/:userId"
+              element={
+                <AdminRoute>
+                  <UserDetailsPage />
+                </AdminRoute>
+              }
+            />
+
+            <Route
+              path="/admin/offers/create"
+              element={
+                <AdminRoute>
+                  <OfferFormPage />
+                </AdminRoute>
+              }
+            />
+
+            <Route
+              path="/admin/offers/edit/:offerId"
+              element={
+                <AdminRoute>
+                  <OfferFormPage />
                 </AdminRoute>
               }
             />

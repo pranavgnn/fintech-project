@@ -1,39 +1,47 @@
 import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router";
-import AdminSidebar from "../admin/AdminSidebar";
+import Sidebar from "@/components/shared/Sidebar";
 import RootLayout from "./RootLayout";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+  LayoutDashboard,
+  Users,
+  CreditCard,
+  Gift,
+  BarChart,
+  LogOut,
+} from "lucide-react";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
   showFooter?: boolean;
 }
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ children, showFooter = false }) => {
+const AdminLayout: React.FC<AdminLayoutProps> = ({
+  children,
+  showFooter = false,
+}) => {
   const { user, isAuthenticated } = useAuth();
-  const [open, setOpen] = React.useState(false);
 
   const isAdmin = isAuthenticated && user?.roles?.includes("ROLE_ADMIN");
 
   if (!isAuthenticated) return <Navigate to="/login" />;
   if (!isAdmin) return <Navigate to="/dashboard" />;
 
+  const navItems = [
+    { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { title: "Users", href: "/admin/users", icon: Users },
+    { title: "Accounts", href: "/admin/accounts", icon: CreditCard },
+    { title: "Offers", href: "/admin/offers", icon: Gift },
+    { title: "Transactions", href: "/admin/transactions", icon: BarChart },
+  ];
+
   return (
     <RootLayout showFooter={showFooter}>
-      <div className="flex h-screen bg-muted/20">
-        <div className="hidden lg:block">
-          <AdminSidebar />
-        </div>
-
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="left" className="p-0 sm:max-w-sm">
-            <AdminSidebar mobile onClose={() => setOpen(false)} />
-          </SheetContent>
-        </Sheet>
-
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <main className="flex-1 overflow-auto">{children}</main>
+      <div className="flex min-h-[calc(100vh-80px)]">
+        <Sidebar items={navItems} />
+        <div className="pl-64 w-full">
+          <main className="p-6">{children}</main>
         </div>
       </div>
     </RootLayout>

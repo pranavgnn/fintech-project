@@ -1,7 +1,7 @@
 import React from "react";
 import { Toaster } from "sonner";
-import MainNavbar from "../ui/MainNavbar";
-import Footer from "../ui/Footer";
+import MainNavbar from "../shared/Navbar";
+import Footer from "../shared/Footer";
 
 interface RootLayoutProps {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({
   return (
     <div className="min-h-screen flex flex-col">
       {showNavbar && <MainNavbar />}
-      <main className="flex-grow">{children}</main>
+      <main className="flex-grow pt-16">{children}</main>
       {showFooter && <Footer />}
       <Toaster position="top-right" />
     </div>

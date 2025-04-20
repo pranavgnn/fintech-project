@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import {
   Card,
@@ -15,28 +16,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Search, User } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import { toast } from "sonner";
-import UserDetailsDialog from "@/components/admin/UserDetailsDialog";
 
 interface User {
   id: number;
   name: string;
   email: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   roles: string[];
-  createdAt: string;
 }
 
 const AdminUsersPage: React.FC = () => {
@@ -44,8 +35,7 @@ const AdminUsersPage: React.FC = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -59,9 +49,9 @@ const AdminUsersPage: React.FC = () => {
       setFilteredUsers(
         users.filter(
           (user) =>
-            user.name.toLowerCase().includes(query) ||
-            user.email.toLowerCase().includes(query) ||
-            user.phoneNumber.includes(query)
+            user.name?.toLowerCase().includes(query) ||
+            user.email?.toLowerCase().includes(query) ||
+            (user.phoneNumber && user.phoneNumber.includes(query))
         )
       );
     }
@@ -79,7 +69,7 @@ const AdminUsersPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch users");
+        throw new Error(`Failed to fetch users: ${response.status}`);
       }
 
       const data = await response.json();
@@ -93,9 +83,8 @@ const AdminUsersPage: React.FC = () => {
     }
   };
 
-  const viewUserDetails = (user: User) => {
-    setSelectedUser(user);
-    setIsDialogOpen(true);
+  const viewUserDetails = (userId: number) => {
+    navigate(`/admin/users/${userId}`);
   };
 
   return (
@@ -141,7 +130,6 @@ const AdminUsersPage: React.FC = () => {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
                       <TableHead>Roles</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -149,7 +137,7 @@ const AdminUsersPage: React.FC = () => {
                   <TableBody>
                     {filteredUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
+                        <TableCell colSpan={4} className="text-center py-4">
                           {searchQuery
                             ? "No users found matching your search"
                             : "No users found"}
@@ -162,7 +150,6 @@ const AdminUsersPage: React.FC = () => {
                             {user.name}
                           </TableCell>
                           <TableCell>{user.email}</TableCell>
-                          <TableCell>{user.phoneNumber}</TableCell>
                           <TableCell className="space-x-1">
                             {user.roles?.map((role) => (
                               <Badge
@@ -179,7 +166,7 @@ const AdminUsersPage: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => viewUserDetails(user)}
+                              onClick={() => viewUserDetails(user.id)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -193,15 +180,6 @@ const AdminUsersPage: React.FC = () => {
             )}
           </CardContent>
         </Card>
-
-        {/* User Details Dialog */}
-        {selectedUser && (
-          <UserDetailsDialog
-            user={selectedUser}
-            isOpen={isDialogOpen}
-            onClose={() => setIsDialogOpen(false)}
-          />
-        )}
       </div>
     </AdminLayout>
   );

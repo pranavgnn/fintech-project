@@ -7,14 +7,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PieChart, BarChart4, Users, Gift } from "lucide-react";
 import { toast } from "sonner";
 import DashboardStats from "@/components/admin/DashboardStats";
 import AdminOverviewChart from "@/components/admin/AdminOverviewChart";
 import AdminActivityLog from "@/components/admin/AdminActivityLog";
 
+interface DashboardStats {
+  totalUsers: number;
+  totalAccounts: number;
+  totalTransactions: number;
+  activeOffers: number;
+}
+
 const AdminDashboard: React.FC = () => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     totalAccounts: 0,
     totalTransactions: 0,
@@ -23,60 +29,31 @@ const AdminDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardStats();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardStats = async () => {
     setIsLoading(true);
     try {
-      // Fetch dashboard statistics
       const token = localStorage.getItem("token");
 
-      // Fetch users count
-      const response = await fetch("/api/users", {
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      // Use the new stats endpoint instead of multiple API calls
+      const response = await fetch("/api/admin/stats", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (response.ok) {
-        const users = await response.json();
-
-        // Count accounts across all users
-        const accountsCount = users.reduce(
-          (total: number, user: any) => total + (user.accounts?.length || 0),
-          0
-        );
-
-        // Calculate number of transactions (estimated)
-        const transactionsCount = accountsCount * 3; // Estimate
-
-        // Fetch offers
-        const offersResponse = await fetch("/api/offers", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const offers = offersResponse.ok ? await offersResponse.json() : [];
-
-        // Set the dashboard stats
-        setStats({
-          totalUsers: users.length,
-          totalAccounts: accountsCount,
-          totalTransactions: transactionsCount,
-          activeOffers: offers.length,
-        });
-      } else {
-        console.error("Failed to fetch users:", response.status);
-        // Initialize with empty values on error
-        setStats({
-          totalUsers: 0,
-          totalAccounts: 0,
-          totalTransactions: 0,
-          activeOffers: 0,
-        });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch dashboard stats: ${response.status}`);
       }
+
+      const data = await response.json();
+      setStats(data);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       toast.error("Failed to load dashboard statistics");

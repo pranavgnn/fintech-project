@@ -27,7 +27,7 @@ interface MainNavbarProps {
   showMenuButton?: boolean;
 }
 
-const MainNavbar: React.FC<MainNavbarProps> = ({
+const Navbar: React.FC<MainNavbarProps> = ({
   onMenuClick,
   showMenuButton = false,
 }) => {
@@ -55,10 +55,9 @@ const MainNavbar: React.FC<MainNavbarProps> = ({
   };
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center px-4 md:px-8">
         <div className="flex items-center gap-2">
-          {/* Mobile menu button - only shown when requested */}
           {showMenuButton && onMenuClick && (
             <Button
               variant="ghost"
@@ -92,7 +91,6 @@ const MainNavbar: React.FC<MainNavbarProps> = ({
           </Link>
         </div>
 
-        {/* Main navigation - shown on desktop, to unauthenticated users */}
         <nav className="hidden md:flex mx-6 flex-1 items-center gap-6">
           {!isAuthenticated && (
             <>
@@ -112,9 +110,7 @@ const MainNavbar: React.FC<MainNavbarProps> = ({
           )}
         </nav>
 
-        {/* Right side controls */}
         <div className="ml-auto flex items-center space-x-4">
-          {/* Theme Toggle - always shown */}
           <Button
             variant="ghost"
             size="icon"
@@ -128,15 +124,11 @@ const MainNavbar: React.FC<MainNavbarProps> = ({
             )}
           </Button>
 
-          {/* Authentication-dependent UI */}
           {isAuthenticated ? (
             <>
-              {/* Notifications - only for logged-in users */}
               <Button variant="ghost" size="icon">
                 <Bell className="h-5 w-5" />
               </Button>
-
-              {/* User Menu - only for logged-in users */}
               <DropdownMenu>
                 <DropdownMenuTrigger>
                   <Button
@@ -170,6 +162,11 @@ const MainNavbar: React.FC<MainNavbarProps> = ({
                     <span>Dashboard</span>
                   </DropdownMenuItem>
 
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+
                   <DropdownMenuItem onClick={() => navigate("/settings")}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
@@ -192,7 +189,6 @@ const MainNavbar: React.FC<MainNavbarProps> = ({
             </>
           ) : (
             <>
-              {/* Login/Signup buttons for logged-out users */}
               <Link
                 to="/login"
                 className="text-sm font-medium text-muted-foreground hover:text-primary"
@@ -210,4 +206,4 @@ const MainNavbar: React.FC<MainNavbarProps> = ({
   );
 };
 
-export default MainNavbar;
+export default Navbar;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -9,10 +9,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { Pencil, Search, Trash2 } from "lucide-react";
+import { Edit, Trash2, Users, UserCheck, User } from "lucide-react";
+import { format } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,19 +21,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface Offer {
   id: number;
   title: string;
-  description: string;
   category: string;
+  discount: string;
   validFrom: string;
   validUntil: string;
-  discount?: string;
-  targetType: string;
-  targetCriteria?: string;
-  targetUsers?: any[];
-  createdAt: string;
+  targetType: "ALL_USERS" | "SELECTED_USERS" | "CRITERIA_BASED";
+  active: boolean;
+  targetUsers?: Array<{ id: number; name: string }>;
 }
 
 interface OffersListProps {
@@ -44,52 +41,20 @@ interface OffersListProps {
 
 const OffersList: React.FC<OffersListProps> = ({ onEditOffer }) => {
   const [offers, setOffers] = useState<Offer[]>([]);
-  const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [offerToDelete, setOfferToDelete] = useState<Offer | null>(null);
 
   useEffect(() => {
     fetchOffers();
   }, []);
 
-  useEffect(() => {
-    // Filter offers based on search query and active tab
-    let filtered = offers;
-
-    // Apply search filter
-    if (searchQuery.trim() !== "") {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (offer) =>
-          offer.title.toLowerCase().includes(query) ||
-          offer.description.toLowerCase().includes(query) ||
-          offer.category.toLowerCase().includes(query)
-      );
-    }
-
-    // Apply tab filter
-    const now = new Date();
-    if (activeTab === "active") {
-      filtered = filtered.filter(
-        (offer) =>
-          new Date(offer.validFrom) <= now && new Date(offer.validUntil) > now
-      );
-    } else if (activeTab === "scheduled") {
-      filtered = filtered.filter((offer) => new Date(offer.validFrom) > now);
-    } else if (activeTab === "expired") {
-      filtered = filtered.filter((offer) => new Date(offer.validUntil) <= now);
-    }
-
-    setFilteredOffers(filtered);
-  }, [searchQuery, activeTab, offers]);
-
   const fetchOffers = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
       const token = localStorage.getItem("token");
-
       const response = await fetch("/api/admin/offers", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -97,30 +62,31 @@ const OffersList: React.FC<OffersListProps> = ({ onEditOffer }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch offers");
+        throw new Error(`Failed to fetch offers: ${response.status}`);
       }
 
       const data = await response.json();
       setOffers(data);
-      setFilteredOffers(data);
-    } catch (error) {
-      console.error("Error fetching offers:", error);
+    } catch (err: any) {
+      console.error("Error fetching offers:", err);
+      setError(err.message || "Failed to load offers");
       toast.error("Failed to load offers");
-
-      // Set empty arrays as fallback
-      setOffers([]);
-      setFilteredOffers([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteOffer = async (id: number) => {
-    setConfirmDeleteId(null);
+  const handleDeleteClick = (offer: Offer) => {
+    setOfferToDelete(offer);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!offerToDelete) return;
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/offers/${id}`, {
+      const response = await fetch(`/api/admin/offers/${offerToDelete.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -128,170 +94,143 @@ const OffersList: React.FC<OffersListProps> = ({ onEditOffer }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete offer");
+        throw new Error(`Failed to delete offer: ${response.status}`);
       }
 
       toast.success("Offer deleted successfully");
-      fetchOffers(); // Refresh the list
-    } catch (error) {
-      console.error("Error deleting offer:", error);
-      toast.error("Failed to delete offer");
+      fetchOffers();
+    } catch (err: any) {
+      console.error("Error deleting offer:", err);
+      toast.error(err.message || "Failed to delete offer");
+    } finally {
+      setDeleteDialogOpen(false);
+      setOfferToDelete(null);
     }
   };
 
-  const getOfferStatus = (offer: Offer) => {
-    const now = new Date();
-    const validFrom = new Date(offer.validFrom);
-    const validUntil = new Date(offer.validUntil);
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-    if (validFrom > now) {
-      return "scheduled";
-    } else if (validUntil <= now) {
-      return "expired";
-    } else {
-      return "active";
-    }
-  };
+  if (error) {
+    return (
+      <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md">
+        {error}
+      </div>
+    );
+  }
+
+  if (offers.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No offers found.</p>
+      </div>
+    );
+  }
 
   return (
     <>
-      <div className="flex items-center mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search offers by title, description, or category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
-        </div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Validity</TableHead>
+              <TableHead>Target Type</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {offers.map((offer) => (
+              <TableRow key={offer.id}>
+                <TableCell className="font-medium">{offer.title}</TableCell>
+                <TableCell>{offer.category || "-"}</TableCell>
+                <TableCell>
+                  <div className="text-xs">
+                    <p>
+                      From: {format(new Date(offer.validFrom), "dd MMM yyyy")}
+                    </p>
+                    <p>
+                      Until: {format(new Date(offer.validUntil), "dd MMM yyyy")}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {offer.targetType === "ALL_USERS" && (
+                    <Badge
+                      variant="outline"
+                      className="flex items-center gap-1"
+                    >
+                      <Users className="h-3 w-3" />
+                      All Users
+                    </Badge>
+                  )}
+                  {offer.targetType === "SELECTED_USERS" && (
+                    <Badge className="flex items-center gap-1 bg-blue-500">
+                      <UserCheck className="h-3 w-3" />
+                      Selected ({offer.targetUsers?.length || 0})
+                    </Badge>
+                  )}
+                  {offer.targetType === "CRITERIA_BASED" && (
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <User className="h-3 w-3" />
+                      Criteria
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {offer.active ? (
+                    <Badge className="bg-green-500">Active</Badge>
+                  ) : (
+                    <Badge variant="outline">Inactive</Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEditOffer(offer)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(offer)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">All Offers</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-          <TabsTrigger value="expired">Expired</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab}>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead>Valid Until</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOffers.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        {searchQuery || activeTab !== "all"
-                          ? "No offers match your current filters"
-                          : "No offers found. Create your first offer!"}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredOffers.map((offer) => {
-                      const status = getOfferStatus(offer);
-                      return (
-                        <TableRow key={offer.id}>
-                          <TableCell className="font-medium">
-                            <div
-                              className="max-w-[250px] truncate"
-                              title={offer.title}
-                            >
-                              {offer.title}
-                            </div>
-                          </TableCell>
-                          <TableCell>{offer.category}</TableCell>
-                          <TableCell>
-                            {offer.targetType === "ALL_USERS"
-                              ? "All Users"
-                              : offer.targetType === "SELECTED_USERS"
-                              ? `${offer.targetUsers?.length || 0} Users`
-                              : "Criteria Based"}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(offer.validUntil).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                status === "active"
-                                  ? "default"
-                                  : status === "scheduled"
-                                  ? "outline"
-                                  : "secondary"
-                              }
-                            >
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onEditOffer(offer)}
-                                title="Edit offer"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setConfirmDeleteId(offer.id)}
-                                title="Delete offer"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog
-        open={confirmDeleteId !== null}
-        onOpenChange={() => setConfirmDeleteId(null)}
-      >
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this offer. This action cannot be
-              undone.
+              Are you sure you want to delete the offer "{offerToDelete?.title}
+              "? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
-                confirmDeleteId && handleDeleteOffer(confirmDeleteId)
-              }
+              onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete

@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,20 +11,16 @@ import {
 } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import OffersList from "@/components/admin/OffersList";
-import OfferFormDialog from "@/components/admin/OfferFormDialog";
 
 const AdminOffersPage: React.FC = () => {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [editingOffer, setEditingOffer] = React.useState<any>(null);
+  const navigate = useNavigate();
 
   const handleCreateOffer = () => {
-    setEditingOffer(null);
-    setIsDialogOpen(true);
+    navigate("/admin/offers/create");
   };
 
   const handleEditOffer = (offer: any) => {
-    setEditingOffer(offer);
-    setIsDialogOpen(true);
+    navigate(`/admin/offers/edit/${offer.id}`);
   };
 
   return (
@@ -47,13 +44,6 @@ const AdminOffersPage: React.FC = () => {
             <OffersList onEditOffer={handleEditOffer} />
           </CardContent>
         </Card>
-
-        {/* Create/Edit Offer Dialog */}
-        <OfferFormDialog
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
-          offer={editingOffer}
-        />
       </div>
     </AdminLayout>
   );
