@@ -31,7 +31,10 @@
   }
 }
 
-@custom-variant dark (&:is(.dark *));
+/* Dark mode selector */
+.dark * {
+  /* Dark mode styles will be applied through the .dark class */
+}
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

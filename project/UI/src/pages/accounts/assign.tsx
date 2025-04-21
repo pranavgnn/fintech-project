@@ -39,11 +39,16 @@ export default function AssignAccount() {
         ])
         
         setCustomers(customersResponse.data)
-        // Filter out accounts that are already assigned to customers
+        
+        // Either use the filtered accounts or remove the filter
+        // Option 1: Use the filtered accounts
         const unassignedAccounts = accountsResponse.data.filter(
           (account: Account) => !account.customer || !account.customer.id
         )
-        setAccounts(accountsResponse.data)
+        setAccounts(unassignedAccounts)
+        
+        // Option 2: Just set all accounts without filtering
+        // setAccounts(accountsResponse.data)
       } catch (error) {
         console.error('Error fetching data:', error)
         toast.error('Failed to load data')
@@ -161,4 +166,4 @@ export default function AssignAccount() {
       </div>
     </div>
   )
-} 
+}

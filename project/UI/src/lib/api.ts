@@ -45,10 +45,11 @@ const sanitizeAndParseJSON = async (response: Response): Promise<any> => {
     try {
       return JSON.parse(sanitizedText);
     } catch (parseError) {
-      console.error('JSON parse error:', parseError.message);
+      const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+      console.error('JSON parse error:', errorMessage);
       
       // Specific handling for trailing characters
-      if (parseError.message.includes('position')) {
+      if (parseError instanceof Error && parseError.message.includes('position')) {
         const posMatch = parseError.message.match(/position (\d+)/);
         if (posMatch) {
           const errorPos = parseInt(posMatch[1]);
@@ -84,7 +85,7 @@ const sanitizeAndParseJSON = async (response: Response): Promise<any> => {
         return JSON.parse(cleaned);
       } catch (lastError) {
         console.error('All JSON repair attempts failed');
-        throw new Error('Failed to parse server response: ' + parseError.message);
+        throw new Error('Failed to parse server response: ' + (parseError instanceof Error ? parseError.message : String(parseError)));
       }
     }
   } catch (error) {
@@ -166,13 +167,46 @@ export const fetchOfferById = async (id: number): Promise<Offer> => {
 };
 
 export const createOffer = async (offer: Offer): Promise<Offer> => {
-  const response = await fetch(`${API_BASE}/offers`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(offer),
-  });
-  if (!response.ok) throw new Error('Failed to create offer');
-  return response.json();
+  try {
+    // Format the offer to ensure proper date format
+    const formattedOffer = {
+      ...offer,
+      // Ensure validTill is in proper ISO format for the server
+      validTill: offer.validTill ? new Date(offer.validTill).toISOString().split('T')[0] : null,
+      // Add createdAt if not present
+      createdAt: offer.createdAt || new Date().toISOString().split('T')[0],
+      // Initialize empty collections
+      customers: offer.customers || []
+    };
+
+    console.log('Sending offer data:', JSON.stringify(formattedOffer, null, 2));
+    
+    const response = await fetch(`${API_BASE}/offers`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(formattedOffer),
+    });
+    
+    if (!response.ok) {
+      let errorMessage;
+      try {
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        errorMessage = `${response.status} - ${errorText || response.statusText}`;
+      } catch (e) {
+        errorMessage = `${response.status} - ${response.statusText}`;
+      }
+      throw new Error(`Failed to create offer: ${errorMessage}`);
+    }
+    
+    return await sanitizeAndParseJSON(response);
+  } catch (error) {
+    console.error('Error in createOffer:', error);
+    throw error;
+  }
 };
 
 export const deleteOffer = async (id: number): Promise<void> => {
@@ -222,7 +256,7 @@ export const fetchCustomers = async (): Promise<Customer[]> => {
       return [];
     }
     
-    return data.map(normalizeCustomer).filter(Boolean);
+    return data.map(normalizeCustomer).filter((customer): customer is Customer => customer !== null);
   } catch (error) {
     console.error('Error fetching customers:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to fetch customers');

@@ -24,7 +24,7 @@ export default defineConfig({
           });
           
           // Log request details
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
+          proxy.on('proxyReq', (_proxyReq, req, _res) => {
             console.log(`Proxying ${req.method} ${req.url}`);
           });
           
@@ -49,7 +49,7 @@ export default defineConfig({
                   JSON.parse(responseBody);
                   // Valid JSON, no need to modify
                 } catch (error) {
-                  console.warn(`Invalid JSON detected in response from ${req.url}:`, error.message);
+                  console.warn(`Invalid JSON detected in response from ${req.url}:`, (error as Error).message);
                   
                   let fixedBody = responseBody;
                   let needsFix = false;
@@ -63,7 +63,7 @@ export default defineConfig({
                   }
                   
                   // Fix 2: Truncate at position 125818 if that's where the error is
-                  if (error.message.includes('position 125818') || error.message.includes('position 125819')) {
+                  if ((error as Error).message.includes('position 125818') || (error as Error).message.includes('position 125819')) {
                     console.log('Attempting to fix error at position 125818');
                     // Find the last valid JSON closing bracket before this position
                     const truncated = responseBody.substring(0, 125818);
@@ -103,7 +103,7 @@ export default defineConfig({
                       const originalEnd = res.end;
                       
                       res.write = function() { return true; };
-                      res.end = function() {
+                      res.end = function(this: any) {
                         res.write = originalWrite;
                         res.end = originalEnd;
                         
@@ -112,7 +112,7 @@ export default defineConfig({
                           res.setHeader('content-length', Buffer.byteLength(fixedBody));
                         }
                         
-                        res.end(fixedBody);
+                        return res.end(fixedBody);
                       };
                     } catch (e) {
                       console.error('Failed to fix JSON:', e);

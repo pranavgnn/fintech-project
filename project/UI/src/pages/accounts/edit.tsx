@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router'
+import { useParams, useNavigate } from 'react-router'
 import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,16 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 
-interface Account {
-  id: number
-  number: string
-  balance: number
-  type: string
-  customer?: {
-    id: number
-    name: string
-  }
-}
+// Removed the unused Account interface
 
 export default function EditAccount() {
   const { id } = useParams<{ id: string }>()
@@ -36,12 +27,12 @@ export default function EditAccount() {
       try {
         setLoading(true)
         const response = await axios.get(`http://localhost:8080/api/accounts/${id}`)
-        const account = response.data
+        const accountData = response.data
         
         setFormData({
-          number: account.number,
-          balance: account.balance.toString(),
-          type: account.type
+          number: accountData.number,
+          balance: accountData.balance.toString(),
+          type: accountData.type
         })
       } catch (error) {
         console.error('Error fetching account details:', error)
@@ -68,7 +59,6 @@ export default function EditAccount() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Basic validation
     if (!formData.number || !formData.balance) {
       toast.error('Please fill in all required fields')
       return
@@ -77,7 +67,6 @@ export default function EditAccount() {
     try {
       setSaveLoading(true)
 
-      // Create the account object with proper formatting
       const accountData = {
         id: id,
         number: formData.number,
@@ -187,4 +176,4 @@ export default function EditAccount() {
       </div>
     </div>
   )
-} 
+}

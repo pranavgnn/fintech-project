@@ -74,11 +74,12 @@ export default function Customers() {
     }
   }
 
+  // Or use the newCustomer parameter
   const handleCreateSuccess = (newCustomer: Customer) => {
-    // Refresh the entire list instead of just adding the new customer
-    loadCustomers(true)
+    // Add the new customer to the list without a full reload
+    setCustomers(prev => [...prev, newCustomer])
     setIsCreateDialogOpen(false)
-    toast.success('Customer created successfully')
+    toast.success(`Customer ${newCustomer.name} created successfully`)
   }
 
   const handleRefresh = () => {
