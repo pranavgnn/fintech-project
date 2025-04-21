@@ -184,7 +184,6 @@ const TransferPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
-      const result = await response.json();
       toast.success("Transfer completed successfully!");
       externalForm.reset();
     } catch (err: any) {
@@ -251,7 +250,6 @@ const TransferPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
-      const result = await response.json();
       toast.success("Transfer between accounts completed successfully!");
       internalForm.reset();
     } catch (err: any) {

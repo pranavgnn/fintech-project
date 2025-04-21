@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { format, subDays, isAfter, parseISO, startOfDay } from "date-fns";
+import { format, subDays, parseISO } from "date-fns";
 import {
   Bar,
   BarChart,
@@ -11,6 +11,8 @@ import {
   YAxis,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "@/components/theme-provider";
+import { cn } from "@/lib/utils";
 
 interface Transaction {
   id: number;
@@ -31,6 +33,53 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
   transactions,
   isLoading,
 }) => {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
+
+  // Theme-aware colors
+  const colors = {
+    inflow: isDarkMode ? "#4ade80" : "#22c55e", // green-400 for dark, green-500 for light
+    outflow: isDarkMode ? "#f87171" : "#ef4444", // red-400 for dark, red-500 for light
+    grid: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+    text: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
+  };
+
+  // Custom tooltip component using shadcn variables
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div
+          className={cn(
+            "rounded-md border p-3 shadow-md",
+            "bg-background/95 text-foreground",
+            "border-border"
+          )}
+        >
+          <p className="font-medium mb-1">Date: {label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p
+              key={`item-${index}`}
+              className="text-sm flex items-center gap-2 py-1"
+            >
+              <span
+                className="w-3 h-3 rounded-full inline-block"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="font-medium">
+                {entry.name}:{" "}
+                {new Intl.NumberFormat("en-IN", {
+                  style: "currency",
+                  currency: "INR",
+                }).format(entry.value)}
+              </span>
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   const chartData = useMemo(() => {
     if (!transactions.length) return [];
 
@@ -89,10 +138,10 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
         data={chartData}
         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
         <XAxis
           dataKey="label"
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 12, fill: colors.text }}
           interval={Math.floor(chartData.length / 7)}
         />
         <YAxis
@@ -104,27 +153,29 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
               maximumFractionDigits: 1,
             }).format(value)
           }
+          tick={{ fill: colors.text }}
         />
         <Tooltip
-          formatter={(value: number) =>
-            new Intl.NumberFormat("en-IN", {
-              style: "currency",
-              currency: "INR",
-            }).format(value)
-          }
-          labelFormatter={(label) => `Date: ${label}`}
+          content={<CustomTooltip />}
+          cursor={{
+            fill: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+          }}
         />
-        <Legend />
+        <Legend
+          wrapperStyle={{
+            color: colors.text,
+          }}
+        />
         <Bar
           dataKey="inflow"
           name="Money In"
-          fill="#22c55e"
+          fill={colors.inflow}
           radius={[4, 4, 0, 0]}
         />
         <Bar
           dataKey="outflow"
           name="Money Out"
-          fill="#ef4444"
+          fill={colors.outflow}
           radius={[4, 4, 0, 0]}
         />
       </BarChart>

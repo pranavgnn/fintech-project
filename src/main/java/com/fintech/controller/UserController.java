@@ -2,6 +2,7 @@ package com.fintech.controller;
 
 import com.fintech.dto.RoleRequest;
 import com.fintech.dto.response.UserResponse;
+import com.fintech.dto.response.UserSummaryResponse;
 import com.fintech.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
+    public ResponseEntity<List<UserSummaryResponse>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 

@@ -9,7 +9,6 @@ import {
   CreditCard,
   Gift,
   BarChart,
-  LogOut,
 } from "lucide-react";
 
 interface AdminLayoutProps {

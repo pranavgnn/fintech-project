@@ -45,7 +45,7 @@ public class Offer {
 
     private String targetCriteria;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER) // Using EAGER fetch to prevent lazy loading issues
     @JoinTable(name = "offer_users", joinColumns = @JoinColumn(name = "offer_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
     private Set<User> targetUsers = new HashSet<>();
 
@@ -61,5 +61,32 @@ public class Offer {
         ALL_USERS,
         SELECTED_USERS,
         CRITERIA_BASED
+    }
+
+    // Add these methods to prevent circular reference issues in
+    // toString/equals/hashCode
+    @Override
+    public String toString() {
+        return "Offer{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", targetType=" + targetType +
+                ", active=" + active +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof Offer))
+            return false;
+        Offer offer = (Offer) o;
+        return id != null && id.equals(offer.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

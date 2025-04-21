@@ -1,5 +1,3 @@
-import React, { useState } from "react";
-import { Toaster } from "sonner";
 import Sidebar from "../shared/Sidebar";
 import RootLayout from "./RootLayout";
 import {

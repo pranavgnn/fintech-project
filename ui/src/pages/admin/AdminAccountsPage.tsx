@@ -15,21 +15,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Search, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { Search } from "lucide-react";
+import { useNavigate } from "react-router";
 
 interface Account {
   id: number;
   accountNumber: string;
-  type: string;
   balance: number;
-  createdAt: string;
-  user: {
-    id: number;
-    name: string;
-  };
+  type: string;
+  userId: number;
+  userName?: string;
+  userEmail?: string;
 }
 
 const AdminAccountsPage: React.FC = () => {
@@ -37,6 +37,7 @@ const AdminAccountsPage: React.FC = () => {
   const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchAccounts();
@@ -50,9 +51,10 @@ const AdminAccountsPage: React.FC = () => {
       setFilteredAccounts(
         accounts.filter(
           (account) =>
-            account.accountNumber.toLowerCase().includes(query) ||
-            account.user.name.toLowerCase().includes(query) ||
-            account.type.toLowerCase().includes(query)
+            account.accountNumber?.toLowerCase().includes(query) ||
+            account.type?.toLowerCase().includes(query) ||
+            account.userName?.toLowerCase().includes(query) ||
+            account.userEmail?.toLowerCase().includes(query)
         )
       );
     }
@@ -63,39 +65,47 @@ const AdminAccountsPage: React.FC = () => {
       setIsLoading(true);
       const token = localStorage.getItem("token");
 
-      // Fetch users first, then extract accounts
-      const response = await fetch("/api/users", {
+      // First, fetch all users
+      const usersResponse = await fetch("/api/users", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch user data");
+      if (!usersResponse.ok) {
+        throw new Error(`Failed to fetch users: ${usersResponse.status}`);
       }
 
-      const users = await response.json();
+      const users = await usersResponse.json();
 
-      // Extract and flatten accounts from users
-      const allAccounts = users.reduce((accounts: Account[], user: any) => {
-        if (user.accounts && Array.isArray(user.accounts)) {
-          const userAccounts = user.accounts.map((account: any) => ({
+      // For each user, fetch their accounts
+      const allAccounts: Account[] = [];
+
+      for (const user of users) {
+        const accountsResponse = await fetch(`/api/users/${user.id}/accounts`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (accountsResponse.ok) {
+          const userAccounts = await accountsResponse.json();
+          // Enhance account objects with user information
+          const enhancedAccounts = userAccounts.map((account: any) => ({
             ...account,
-            user: {
-              id: user.id,
-              name: user.name,
-            },
+            userId: user.id,
+            userName: user.name,
+            userEmail: user.email,
           }));
-          return [...accounts, ...userAccounts];
+          allAccounts.push(...enhancedAccounts);
         }
-        return accounts;
-      }, []);
+      }
 
       setAccounts(allAccounts);
       setFilteredAccounts(allAccounts);
     } catch (error) {
       console.error("Error fetching accounts:", error);
-      toast.error("Failed to load accounts");
+      toast.error("Failed to load accounts data");
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +115,46 @@ const AdminAccountsPage: React.FC = () => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
+      maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const handleViewUser = (userId: number) => {
+    navigate(`/admin/users/${userId}`);
+  };
+
+  const getAccountTypeBadge = (type: string) => {
+    switch (type) {
+      case "SAVINGS":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-blue-50 text-blue-700 border-blue-200"
+          >
+            Savings
+          </Badge>
+        );
+      case "CHECKING":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-200"
+          >
+            Checking
+          </Badge>
+        );
+      case "FIXED_DEPOSIT":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-purple-50 text-purple-700 border-purple-200"
+          >
+            Fixed Deposit
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{type}</Badge>;
+    }
   };
 
   return (
@@ -119,9 +168,9 @@ const AdminAccountsPage: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>All Bank Accounts</CardTitle>
+            <CardTitle>All Accounts</CardTitle>
             <CardDescription>
-              View all registered accounts in the system
+              View and manage all user accounts in the system
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -129,11 +178,14 @@ const AdminAccountsPage: React.FC = () => {
               <div className="relative flex-1">
                 <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search by account number, owner name, or account type..."
+                  placeholder="Search by account number, type, or user..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8"
                 />
+              </div>
+              <div className="ml-2">
+                <Button disabled>Export Accounts</Button>
               </div>
             </div>
 
@@ -147,10 +199,10 @@ const AdminAccountsPage: React.FC = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Account Number</TableHead>
-                      <TableHead>Owner</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Balance</TableHead>
-                      <TableHead>Created On</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -168,25 +220,31 @@ const AdminAccountsPage: React.FC = () => {
                           <TableCell className="font-medium">
                             {account.accountNumber}
                           </TableCell>
-                          <TableCell>{account.user.name}</TableCell>
                           <TableCell>
-                            <Badge
-                              variant={
-                                account.type === "SAVINGS"
-                                  ? "outline"
-                                  : account.type === "CHECKING"
-                                  ? "secondary"
-                                  : "default"
-                              }
-                            >
-                              {account.type}
-                            </Badge>
+                            {getAccountTypeBadge(account.type)}
                           </TableCell>
                           <TableCell>
                             {formatCurrency(account.balance)}
                           </TableCell>
                           <TableCell>
-                            {new Date(account.createdAt).toLocaleDateString()}
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {account.userName || "Unknown"}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {account.userEmail || "No email"}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleViewUser(account.userId)}
+                              title="View user details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))

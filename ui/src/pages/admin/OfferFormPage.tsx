@@ -82,8 +82,8 @@ const OfferFormPage: React.FC = () => {
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
 
   // Initialize form with default values
-  const form = useForm<OfferFormValues>({
-    resolver: zodResolver(offerSchema),
+  const form = useForm<OfferFormValues, any>({
+    resolver: zodResolver(offerSchema) as any,
     defaultValues: {
       title: "",
       description: "",
@@ -91,7 +91,7 @@ const OfferFormPage: React.FC = () => {
       validFrom: new Date(),
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 days
       discount: "",
-      targetType: "ALL_USERS",
+      targetType: "ALL_USERS" as const,
       targetCriteria: "",
       targetUserIds: [],
       active: true,
@@ -137,7 +137,10 @@ const OfferFormPage: React.FC = () => {
           ? new Date(offer.validUntil)
           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         discount: offer.discount || "",
-        targetType: offer.targetType || "ALL_USERS",
+        targetType: (offer.targetType || "ALL_USERS") as
+          | "ALL_USERS"
+          | "SELECTED_USERS"
+          | "CRITERIA_BASED",
         targetCriteria: offer.targetCriteria || "",
         targetUserIds: userIds,
         active: offer.active !== undefined ? offer.active : true,
@@ -261,6 +264,32 @@ const OfferFormPage: React.FC = () => {
     }
   };
 
+  // Create a custom date picker button to avoid nested button issues
+  const DatePickerButton = React.forwardRef<
+    HTMLDivElement,
+    {
+      value?: Date | null;
+      onClick?: () => void;
+      className?: string;
+      placeholder?: string;
+    }
+  >(({ value, onClick, className, placeholder = "Pick a date" }, ref) => (
+    <div
+      onClick={onClick}
+      ref={ref}
+      className={cn(
+        "flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm ring-offset-background cursor-pointer",
+        "flex items-center justify-between",
+        !value && "text-muted-foreground",
+        className
+      )}
+    >
+      {value ? format(value, "PPP") : <span>{placeholder}</span>}
+      <CalendarIcon className="h-4 w-4 opacity-50" />
+    </div>
+  ));
+  DatePickerButton.displayName = "DatePickerButton";
+
   return (
     <AdminLayout>
       <div className="flex-1 space-y-4 p-6 md:p-8">
@@ -373,27 +402,14 @@ const OfferFormPage: React.FC = () => {
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
+                              <DatePickerButton value={field.value} />
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="single"
                               selected={field.value}
-                              onSelect={field.onChange}
+                              onSelect={(date) => date && field.onChange(date)}
                               initialFocus
                             />
                           </PopoverContent>
@@ -412,27 +428,14 @@ const OfferFormPage: React.FC = () => {
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
+                              <DatePickerButton value={field.value} />
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="single"
                               selected={field.value}
-                              onSelect={field.onChange}
+                              onSelect={(date) => date && field.onChange(date)}
                               disabled={(date) => date < new Date()}
                               initialFocus
                             />
@@ -443,6 +446,8 @@ const OfferFormPage: React.FC = () => {
                     )}
                   />
                 </div>
+
+                {/* ... existing code for discount form field ... */}
 
                 <FormField
                   control={form.control}

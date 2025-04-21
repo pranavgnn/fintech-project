@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate, Link } from "react-router";
 import {
-  Bell,
   Moon,
   Sun,
   User,
@@ -21,6 +20,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+import NotificationPopover from "./NotificationPopover";
 
 interface MainNavbarProps {
   onMenuClick?: () => void;
@@ -126,14 +127,13 @@ const Navbar: React.FC<MainNavbarProps> = ({
 
           {isAuthenticated ? (
             <>
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-              </Button>
+              <NotificationPopover />
               <DropdownMenu>
                 <DropdownMenuTrigger>
                   <Button
                     variant="ghost"
                     className="relative h-8 w-8 rounded-full"
+                    asChild
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>

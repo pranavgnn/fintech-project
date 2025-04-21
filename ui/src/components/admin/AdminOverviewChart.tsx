@@ -32,7 +32,6 @@ const AdminOverviewChart: React.FC = () => {
   const fetchTimelineData = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
 
       // This would be a real API endpoint in a production app
       // For now, we'll create some simulated data based on month

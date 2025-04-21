@@ -2,6 +2,8 @@ package com.fintech.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -33,9 +35,12 @@ public class User {
     private String phoneNumber;
 
     @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "kyc_id")
     private KYC kyc;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Account> accounts = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -43,6 +48,8 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
     @ManyToMany(mappedBy = "targetUsers")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Offer> offers = new HashSet<>();
 
     @CreatedDate

@@ -21,12 +21,12 @@ public class OfferRequest {
     private String category;
 
     @NotNull(message = "Valid from date is required")
-    // @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-ddTHH:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime validFrom;
 
     @NotNull(message = "Valid until date is required")
     @FutureOrPresent(message = "Valid until date must be in the future")
-    // @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-ddTHH:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime validUntil;
 
     private String discount;

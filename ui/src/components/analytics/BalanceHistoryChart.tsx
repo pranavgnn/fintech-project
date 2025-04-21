@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { format, parseISO, isAfter, startOfDay, subDays } from "date-fns";
+import { format, parseISO, startOfDay, subDays } from "date-fns";
 import {
   Line,
   LineChart,
@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "@/components/theme-provider";
 
 interface Transaction {
   id: number;
@@ -40,14 +41,24 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({
   transactions,
   isLoading,
 }) => {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
+
+  // Theme-aware colors
+  const colors = {
+    total: isDarkMode ? "#a78bfa" : "#8b5cf6", // purple-400 for dark, purple-500 for light
+    savings: isDarkMode ? "#4ade80" : "#22c55e", // green-400 for dark, green-500 for light
+    checking: isDarkMode ? "#fbbf24" : "#f59e0b", // amber-400 for dark, amber-500 for light
+    grid: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+    text: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
+  };
+
   const chartData = useMemo(() => {
     if (!accounts.length || !transactions.length) return [];
 
     const days = 30;
     const today = startOfDay(new Date());
-    const startDate = subDays(today, days);
 
-    // Get current balances
     const currentBalances: { [key: string]: number } = {};
     accounts.forEach((account) => {
       currentBalances[account.accountNumber] = account.balance;
@@ -189,10 +200,10 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({
         data={chartData}
         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
         <XAxis
           dataKey="label"
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 12, fill: colors.text }}
           interval={Math.floor(chartData.length / 10)}
         />
         <YAxis
@@ -204,6 +215,7 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({
               maximumFractionDigits: 1,
             }).format(value)
           }
+          tick={{ fill: colors.text }}
         />
         <Tooltip
           formatter={(value: number) =>
@@ -213,13 +225,25 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({
             }).format(value)
           }
           labelFormatter={(label) => `Date: ${label}`}
+          contentStyle={{
+            backgroundColor: isDarkMode ? "#1f2937" : "#ffffff",
+            borderColor: isDarkMode ? "#374151" : "#e5e7eb",
+            color: isDarkMode ? "#f3f4f6" : "#111827",
+          }}
+          itemStyle={{
+            color: isDarkMode ? "#f3f4f6" : "#111827",
+          }}
         />
-        <Legend />
+        <Legend
+          wrapperStyle={{
+            color: colors.text,
+          }}
+        />
         <Line
           type="monotone"
           dataKey="total"
           name="Total Balance"
-          stroke="#8884d8"
+          stroke={colors.total}
           strokeWidth={3}
           dot={false}
           activeDot={{ r: 8 }}
@@ -228,7 +252,7 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({
           type="monotone"
           dataKey="savings"
           name="Savings Accounts"
-          stroke="#82ca9d"
+          stroke={colors.savings}
           strokeWidth={2}
           dot={false}
         />
@@ -236,7 +260,7 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({
           type="monotone"
           dataKey="checking"
           name="Checking Accounts"
-          stroke="#ffc658"
+          stroke={colors.checking}
           strokeWidth={2}
           dot={false}
         />

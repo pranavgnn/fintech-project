@@ -81,9 +81,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::convertToUserResponse)
+    @Transactional(readOnly = true)
+    public List<UserSummaryResponse> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(this::convertToUserSummaryResponse)
                 .collect(Collectors.toList());
     }
 
@@ -171,6 +173,25 @@ public class UserServiceImpl implements UserService {
 
         // Initialize offers as empty set since the field may not exist yet
         response.setOffers(new HashSet<>());
+
+        return response;
+    }
+
+    private UserSummaryResponse convertToUserSummaryResponse(User user) {
+        UserSummaryResponse response = new UserSummaryResponse();
+        response.setId(user.getId());
+        response.setName(user.getName());
+        response.setEmail(user.getEmail());
+        response.setPhoneNumber(user.getPhoneNumber());
+
+        // Explicitly load roles to avoid lazy loading issues
+        Set<String> roleNames = new HashSet<>();
+        if (user.getRoles() != null) {
+            roleNames = user.getRoles().stream()
+                    .map(role -> role.getName().name())
+                    .collect(Collectors.toSet());
+        }
+        response.setRoles(roleNames);
 
         return response;
     }

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { LoginRequest, SignupRequest } from "../types/auth";
@@ -22,50 +22,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-  const loadUserFromToken = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      console.log("Loading user data from token...");
-      const response = await fetch("/api/users/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to load user data: ${response.status}`);
-      }
-
-      const userData = await response.json();
-      console.log("User data loaded:", userData);
-
-      // Make sure roles are properly loaded and parsed
-      if (userData && !userData.roles) {
-        console.warn("User data received but roles are missing:", userData);
-        userData.roles = []; // Set default empty roles if missing
-      }
-
-      setUser(userData);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error("Error loading user:", error);
-      localStorage.removeItem("token");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("token");
       if (token) {
         try {
-          // Fetch current user data
           const response = await fetch("/api/users/me", {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -109,7 +70,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!response.ok) {
         let errorMessage = "Login failed";
 
-        // Try to parse error response
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
           try {
@@ -134,7 +94,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { accessToken } = responseData;
       localStorage.setItem("token", accessToken);
 
-      // Fetch user data after login
       try {
         const userResponse = await fetch("/api/users/me", {
           headers: {
@@ -183,7 +142,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!response.ok) {
         let errorMessage = "Signup failed";
 
-        // Try to parse error response
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
           try {
@@ -204,7 +162,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       toast.success("Account created successfully!");
 
-      // Automatically login after successful signup
       await login({
         email: data.email,
         password: data.password,

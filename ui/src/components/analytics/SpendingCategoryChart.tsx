@@ -8,6 +8,7 @@ import {
   Legend,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "@/components/theme-provider";
 
 interface Transaction {
   id: number;
@@ -63,23 +64,36 @@ const getCategoryFromDescription = (description: string): string => {
   return "Other";
 };
 
-const COLORS = [
-  "#0088FE",
-  "#00C49F",
-  "#FFBB28",
-  "#FF8042",
-  "#A28DFF",
-  "#FF6B6B",
-  "#4ECDC4",
-  "#FFA69E",
-  "#2F5D62",
-  "#E84855",
-];
-
 const SpendingCategoryChart: React.FC<SpendingCategoryChartProps> = ({
   transactions,
   isLoading,
 }) => {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
+
+  // Theme-aware colors
+  const COLORS = isDarkMode
+    ? [
+        "#60a5fa",
+        "#4ade80",
+        "#fbbf24",
+        "#f87171",
+        "#c084fc",
+        "#94a3b8",
+        "#67e8f9",
+        "#fda4af",
+      ] // lighter for dark mode
+    : [
+        "#3b82f6",
+        "#10b981",
+        "#f59e0b",
+        "#ef4444",
+        "#8b5cf6",
+        "#64748b",
+        "#06b6d4",
+        "#f43f5e",
+      ]; // darker for light mode
+
   const chartData = useMemo(() => {
     if (!transactions.length) return [];
 
@@ -124,7 +138,7 @@ const SpendingCategoryChart: React.FC<SpendingCategoryChartProps> = ({
             `${name} ${(percent * 100).toFixed(0)}%`
           }
         >
-          {chartData.map((entry, index) => (
+          {chartData.map((_, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
@@ -135,8 +149,20 @@ const SpendingCategoryChart: React.FC<SpendingCategoryChartProps> = ({
               currency: "INR",
             }).format(value)
           }
+          contentStyle={{
+            backgroundColor: isDarkMode ? "#1f2937" : "#ffffff",
+            borderColor: isDarkMode ? "#374151" : "#e5e7eb",
+            color: isDarkMode ? "#f3f4f6" : "#111827",
+          }}
+          itemStyle={{
+            color: isDarkMode ? "#f3f4f6" : "#111827",
+          }}
         />
-        <Legend />
+        <Legend
+          wrapperStyle={{
+            color: isDarkMode ? "#e5e7eb" : "#111827",
+          }}
+        />
       </PieChart>
     </ResponsiveContainer>
   );

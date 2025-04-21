@@ -43,7 +43,6 @@ public class OfferServiceImpl implements OfferService {
         offer.setTargetCriteria(request.getTargetCriteria());
         offer.setActive(request.isActive() != null ? request.isActive() : true);
 
-        // Add target users if specified
         if (request.getTargetType() == Offer.OfferTargetType.SELECTED_USERS &&
                 request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
             List<User> targetUsers = userRepository.findAllById(request.getTargetUserIds());
@@ -68,29 +67,27 @@ public class OfferServiceImpl implements OfferService {
         offer.setDiscount(request.getDiscount());
         offer.setTargetType(request.getTargetType());
         offer.setTargetCriteria(request.getTargetCriteria());
-        // Update active status if provided
+
         if (request.isActive() != null) {
             offer.setActive(request.isActive());
         }
 
-        // Update target users
         if (request.getTargetType() == Offer.OfferTargetType.SELECTED_USERS &&
                 request.getTargetUserIds() != null) {
-            // Clear existing target users
             offer.getTargetUsers().clear();
-            // Add the new target users
             List<User> targetUsers = userRepository.findAllById(request.getTargetUserIds());
             offer.getTargetUsers().addAll(targetUsers);
         } else {
-            // For other target types, clear any existing target users
             offer.getTargetUsers().clear();
         }
 
         Offer updatedOffer = offerRepository.save(offer);
+        log.debug("Updated offer: {}", updatedOffer);
         return convertToOfferResponse(updatedOffer);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public OfferResponse getOfferById(Long offerId) {
         Offer offer = offerRepository.findById(offerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Offer not found with id: " + offerId));
@@ -98,16 +95,21 @@ public class OfferServiceImpl implements OfferService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<OfferResponse> getAllOffers() {
-        return offerRepository.findAll().stream()
+        List<Offer> offers = offerRepository.findAll();
+        log.debug("Found {} offers", offers.size());
+        return offers.stream()
                 .map(this::convertToOfferResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<OfferResponse> getActiveOffersForUser(Long userId) {
         LocalDateTime now = LocalDateTime.now();
         return offerRepository.findActiveOffersForUser(userId, now).stream()
+                .filter(offer -> offer.getActive()) // Only return active offers
                 .map(this::convertToOfferResponse)
                 .collect(Collectors.toList());
     }
@@ -120,6 +122,7 @@ public class OfferServiceImpl implements OfferService {
         offerRepository.delete(offer);
     }
 
+    @Transactional(readOnly = true)
     private OfferResponse convertToOfferResponse(Offer offer) {
         OfferResponse response = new OfferResponse();
         response.setId(offer.getId());
@@ -135,23 +138,35 @@ public class OfferServiceImpl implements OfferService {
         response.setUpdatedAt(offer.getUpdatedAt());
         response.setActive(offer.getActive());
 
-        // Convert target users to DTOs
         List<UserSummaryResponse> targetUserResponses = new ArrayList<>();
-        if (offer.getTargetUsers() != null && !offer.getTargetUsers().isEmpty()) {
-            targetUserResponses = offer.getTargetUsers().stream()
-                    .map(this::convertToUserSummaryResponse)
-                    .collect(Collectors.toList());
+
+        if (offer.getTargetType() == Offer.OfferTargetType.SELECTED_USERS) {
+            try {
+                List<Long> targetUserIds = new ArrayList<>();
+                if (offer.getTargetUsers() != null) {
+                    targetUserIds = offer.getTargetUsers().stream()
+                            .map(User::getId)
+                            .collect(Collectors.toList());
+                }
+
+                if (!targetUserIds.isEmpty()) {
+                    List<User> users = userRepository.findAllById(targetUserIds);
+
+                    for (User user : users) {
+                        UserSummaryResponse userSummary = new UserSummaryResponse();
+                        userSummary.setId(user.getId());
+                        userSummary.setName(user.getName());
+                        userSummary.setEmail(user.getEmail());
+                        targetUserResponses.add(userSummary);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error fetching target users for offer {}: {}", offer.getId(), e.getMessage());
+            }
         }
+
         response.setTargetUsers(targetUserResponses);
 
-        return response;
-    }
-
-    private UserSummaryResponse convertToUserSummaryResponse(User user) {
-        UserSummaryResponse response = new UserSummaryResponse();
-        response.setId(user.getId());
-        response.setName(user.getName());
-        response.setEmail(user.getEmail());
         return response;
     }
 }
