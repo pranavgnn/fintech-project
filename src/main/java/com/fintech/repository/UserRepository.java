@@ -3,6 +3,7 @@ package com.fintech.repository;
 import com.fintech.entity.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -18,8 +19,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByPhoneNumber(String phoneNumber);
 
     @EntityGraph(attributePaths = { "roles" })
+    @NonNull
     List<User> findAll();
 
     @EntityGraph(attributePaths = { "roles" })
-    Optional<User> findById(Long id);
+    @NonNull
+    Optional<User> findById(@NonNull Long id);
 }
