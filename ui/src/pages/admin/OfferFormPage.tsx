@@ -410,7 +410,6 @@ const OfferFormPage: React.FC = () => {
                               mode="single"
                               selected={field.value}
                               onSelect={(date) => date && field.onChange(date)}
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
@@ -437,7 +436,6 @@ const OfferFormPage: React.FC = () => {
                               selected={field.value}
                               onSelect={(date) => date && field.onChange(date)}
                               disabled={(date) => date < new Date()}
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>

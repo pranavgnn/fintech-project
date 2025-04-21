@@ -103,12 +103,24 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
         const dayData = datesMap.get(txDate);
 
         if (dayData) {
-          // Determine if it's an inflow or outflow
-          const isOutgoing = transaction.fromAccountNumber !== null;
-
-          if (isOutgoing) {
+          // Fix the logic to correctly identify inflows and outflows based on the account numbers
+          // An inflow is when money is coming INTO one of your accounts (toAccountNumber matches)
+          // An outflow is when money is going OUT OF one of your accounts (fromAccountNumber matches)
+          if (transaction.fromAccountNumber && !transaction.toAccountNumber) {
+            // Pure outflow (e.g., payment)
             dayData.outflow += transaction.amount;
-          } else {
+          } else if (
+            !transaction.fromAccountNumber &&
+            transaction.toAccountNumber
+          ) {
+            // Pure inflow (e.g., deposit)
+            dayData.inflow += transaction.amount;
+          } else if (
+            transaction.fromAccountNumber &&
+            transaction.toAccountNumber
+          ) {
+            // Transfer between accounts - track both inflow and outflow correctly
+            dayData.outflow += transaction.amount;
             dayData.inflow += transaction.amount;
           }
         }
@@ -150,8 +162,11 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
               style: "currency",
               currency: "INR",
               notation: "compact",
+              compactDisplay: "short",
               maximumFractionDigits: 1,
-            }).format(value)
+            })
+              .format(value)
+              .replace("T", "k")
           }
           tick={{ fill: colors.text }}
         />

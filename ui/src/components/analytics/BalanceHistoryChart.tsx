@@ -194,6 +194,17 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({
     );
   }
 
+  // Custom formatter function to use 'k' for thousands
+  const formatCurrencyWithK = (value: number) => {
+    if (Math.abs(value) >= 1000000) {
+      return `₹${(value / 1000000).toFixed(1)}M`;
+    } else if (Math.abs(value) >= 1000) {
+      return `₹${(value / 1000).toFixed(1)}k`; // Using 'k' instead of 't'
+    } else {
+      return `₹${value.toFixed(0)}`;
+    }
+  };
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
@@ -207,14 +218,7 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({
           interval={Math.floor(chartData.length / 10)}
         />
         <YAxis
-          tickFormatter={(value) =>
-            new Intl.NumberFormat("en-IN", {
-              style: "currency",
-              currency: "INR",
-              notation: "compact",
-              maximumFractionDigits: 1,
-            }).format(value)
-          }
+          tickFormatter={formatCurrencyWithK}
           tick={{ fill: colors.text }}
         />
         <Tooltip

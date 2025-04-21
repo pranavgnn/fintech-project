@@ -49,22 +49,20 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
     const accountActivity: { [key: string]: number } = {};
     let largestTransaction = 0;
 
-    // Process transactions
+    // Create set of account numbers for faster lookups
+    const accountNumbers = new Set(accounts.map((a) => a.accountNumber));
+
+    // Process transactions properly tracking both incoming and outgoing for internal transfers
     transactions.forEach((tx) => {
-      // Check if this is an outgoing or incoming transaction
-      if (
-        tx.fromAccountNumber &&
-        accounts.some((a) => a.accountNumber === tx.fromAccountNumber)
-      ) {
+      // Check if this is an outgoing transaction
+      if (tx.fromAccountNumber && accountNumbers.has(tx.fromAccountNumber)) {
         totalOutgoing += tx.amount;
         accountActivity[tx.fromAccountNumber] =
           (accountActivity[tx.fromAccountNumber] || 0) + 1;
       }
 
-      if (
-        tx.toAccountNumber &&
-        accounts.some((a) => a.accountNumber === tx.toAccountNumber)
-      ) {
+      // Check if this is an incoming transaction
+      if (tx.toAccountNumber && accountNumbers.has(tx.toAccountNumber)) {
         totalIncoming += tx.amount;
         accountActivity[tx.toAccountNumber] =
           (accountActivity[tx.toAccountNumber] || 0) + 1;

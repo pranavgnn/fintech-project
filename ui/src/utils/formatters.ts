@@ -34,3 +34,16 @@ export const maskAccountNumber = (accountNumber: string): string => {
   const lastFour = accountNumber.slice(-4);
   return `•••• •••• ${lastFour}`;
 };
+
+/**
+ * Format currency in a compact form (e.g., 1.2k, 1.2M)
+ */
+export const formatCurrencyCompact = (amount: number): string => {
+  if (Math.abs(amount) >= 1000000) {
+    return `₹${(amount / 1000000).toFixed(1)}M`;
+  } else if (Math.abs(amount) >= 1000) {
+    return `₹${(amount / 1000).toFixed(1)}k`; // Changed from 't' to 'k'
+  } else {
+    return `₹${amount.toFixed(2)}`;
+  }
+};

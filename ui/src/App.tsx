@@ -1,27 +1,33 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
+import { lazy, Suspense } from "react";
 
 // User pages
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import DashboardPage from "./pages/DashboardPage";
-import AccountDetailPage from "./pages/AccountDetailPage";
-import CreateAccountPage from "./pages/CreateAccountPage";
-import TransferPage from "./pages/TransferPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import LandingPage from "./pages/LandingPage";
-import UserDetailsPage from "@/pages/UserDetailsPage";
-import UserAnalyticsPage from "@/pages/UserAnalyticsPage";
-import AccountsPage from "@/pages/AccountsPage";
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const SignupPage = lazy(() => import("./pages/SignupPage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const AccountDetailPage = lazy(() => import("./pages/AccountDetailPage"));
+const CreateAccountPage = lazy(() => import("./pages/CreateAccountPage"));
+const TransferPage = lazy(() => import("./pages/TransferPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const UserDetailsPage = lazy(() => import("@/pages/UserDetailsPage"));
+const UserAnalyticsPage = lazy(() => import("@/pages/UserAnalyticsPage"));
+const AccountsPage = lazy(() => import("@/pages/AccountsPage"));
+const AccountTransactionsPage = lazy(
+  () => import("./pages/AccountTransactionsPage")
+);
 
 // Admin pages
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminOffersPage from "./pages/admin/AdminOffersPage";
-import AdminUsersPage from "./pages/admin/AdminUsersPage";
-import AdminAccountsPage from "./pages/admin/AdminAccountsPage";
-import AdminTransactionsPage from "./pages/admin/AdminTransactionsPage";
-import OfferFormPage from "@/pages/admin/OfferFormPage";
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminOffersPage = lazy(() => import("./pages/admin/AdminOffersPage"));
+const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
+const AdminAccountsPage = lazy(() => import("./pages/admin/AdminAccountsPage"));
+const AdminTransactionsPage = lazy(
+  () => import("./pages/admin/AdminTransactionsPage")
+);
+const OfferFormPage = lazy(() => import("@/pages/admin/OfferFormPage"));
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -35,71 +41,117 @@ function App() {
         <AuthProvider>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route
+              path="/"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <LandingPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <LoginPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <SignupPage />
+                </Suspense>
+              }
+            />
 
             {/* Protected user routes */}
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/accounts/create"
               element={
-                <ProtectedRoute>
-                  <CreateAccountPage />
-                </ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ProtectedRoute>
+                    <CreateAccountPage />
+                  </ProtectedRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/accounts/:accountId"
               element={
-                <ProtectedRoute>
-                  <AccountDetailPage />
-                </ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ProtectedRoute>
+                    <AccountDetailPage />
+                  </ProtectedRoute>
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="/accounts/:accountId/transactions"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ProtectedRoute>
+                    <AccountTransactionsPage />
+                  </ProtectedRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/transfer"
               element={
-                <ProtectedRoute>
-                  <TransferPage />
-                </ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ProtectedRoute>
+                    <TransferPage />
+                  </ProtectedRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/profile"
               element={
-                <ProtectedRoute>
-                  <UserDetailsPage />
-                </ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ProtectedRoute>
+                    <UserDetailsPage />
+                  </ProtectedRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/analytics"
               element={
-                <ProtectedRoute>
-                  <UserAnalyticsPage />
-                </ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ProtectedRoute>
+                    <UserAnalyticsPage />
+                  </ProtectedRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/accounts"
               element={
-                <ProtectedRoute>
-                  <AccountsPage />
-                </ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ProtectedRoute>
+                    <AccountsPage />
+                  </ProtectedRoute>
+                </Suspense>
               }
             />
 
@@ -107,79 +159,102 @@ function App() {
             <Route
               path="/admin"
               element={
-                <AdminRoute>
-                  <AdminDashboard />
-                </AdminRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/admin/offers"
               element={
-                <AdminRoute>
-                  <AdminOffersPage />
-                </AdminRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AdminRoute>
+                    <AdminOffersPage />
+                  </AdminRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/admin/users"
               element={
-                <AdminRoute>
-                  <AdminUsersPage />
-                </AdminRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AdminRoute>
+                    <AdminUsersPage />
+                  </AdminRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/admin/accounts"
               element={
-                <AdminRoute>
-                  <AdminAccountsPage />
-                </AdminRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AdminRoute>
+                    <AdminAccountsPage />
+                  </AdminRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/admin/transactions"
               element={
-                <AdminRoute>
-                  <AdminTransactionsPage />
-                </AdminRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AdminRoute>
+                    <AdminTransactionsPage />
+                  </AdminRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/admin/users/:userId"
               element={
-                <AdminRoute>
-                  <UserDetailsPage />
-                </AdminRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AdminRoute>
+                    <UserDetailsPage />
+                  </AdminRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/admin/offers/create"
               element={
-                <AdminRoute>
-                  <OfferFormPage />
-                </AdminRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AdminRoute>
+                    <OfferFormPage />
+                  </AdminRoute>
+                </Suspense>
               }
             />
 
             <Route
               path="/admin/offers/edit/:offerId"
               element={
-                <AdminRoute>
-                  <OfferFormPage />
-                </AdminRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AdminRoute>
+                    <OfferFormPage />
+                  </AdminRoute>
+                </Suspense>
               }
             />
 
             <Route path="/" element={<Navigate to="/login" replace />} />
 
             {/* 404 Page */}
-            <Route path="*" element={<NotFoundPage />} />
+            <Route
+              path="*"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <NotFoundPage />
+                </Suspense>
+              }
+            />
           </Routes>
           <Toaster position="top-right" />
         </AuthProvider>

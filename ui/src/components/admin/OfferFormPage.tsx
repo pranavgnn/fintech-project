@@ -65,8 +65,8 @@ const offerSchema = z.object({
   discount: z.string().optional(),
   targetType: z.enum(["ALL_USERS", "SELECTED_USERS", "CRITERIA_BASED"]),
   targetCriteria: z.string().optional(),
-  targetUserIds: z.array(z.number()).default([]),
-  active: z.boolean().default(true),
+  targetUserIds: z.array(z.number()),
+  active: z.boolean(),
 });
 
 // Type inference from the schema
@@ -395,7 +395,6 @@ const OfferFormPage: React.FC = () => {
                               mode="single"
                               selected={field.value}
                               onSelect={field.onChange}
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
@@ -435,7 +434,6 @@ const OfferFormPage: React.FC = () => {
                               selected={field.value}
                               onSelect={field.onChange}
                               disabled={(date) => date < new Date()}
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
